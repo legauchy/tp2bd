@@ -8,7 +8,8 @@ public class Banque {
 	
 	static final String USER = "gauchya";
 	static final String PASSWD = "bd2014";
-        public static Connection conn;
+     public static Connection conn;
+     
 	private static void menu() {
 		System.out.println("*** Choisir une action a effectuer : ***");
 		System.out.println("0 : Quitter");
@@ -21,48 +22,66 @@ public class Banque {
 	}
 
 	private static void selection() throws SQLException {
-            Statement requete = Banque.conn.createStatement();
-            ResultSet resultat = requete.executeQuery("select * from Comptes");
-            while(resultat.next()) {
-                System.out.println("Nc = " + resultat.getInt("Nc") + ","
-                        + "Nom = " + resultat.getString("Nom") + ","
-                        + " Solde = " + resultat.getInt("Solde")); 
-            }
+		Statement requete = Banque.conn.createStatement();
+		ResultSet resultat = requete.executeQuery("select * from Comptes");
+		while(resultat.next()) {
+			System.out.println("Nc = " + resultat.getInt("Nc") + ","
+			    + "Nom = " + resultat.getString("Nom") + ","
+			    + " Solde = " + resultat.getInt("Solde")); 
+		}
 	}
 
 	private static void insertion() throws SQLException {
-            PreparedStatement stmt = conn.prepareStatement("INSERT INTO Comptes VALUES (?, ?, ?)");
-            stmt.setInt(1, LectureClavier.lireEntier("Nc du compte à inserer :"));
-            System.out.println("Nom du proprio :");
-            stmt.setString(2,LectureClavier.lireChaine());
-            stmt.setInt(3, LectureClavier.lireEntier("Solde du compte à inserer :"));
-            stmt.executeUpdate();
-	}	
+		try {
+			PreparedStatement stmt = conn.prepareStatement("INSERT INTO Comptes VALUES (?, ?, ?)");
+			stmt.setInt(1, LectureClavier.lireEntier("Nc du compte à inserer :"));
+			System.out.println("Nom du proprio :");
+			stmt.setString(2,LectureClavier.lireChaine());
+			stmt.setInt(3, LectureClavier.lireEntier("Solde du compte à inserer :"));
+			stmt.executeUpdate();
+		} catch (SQLException e) {
+			System.out.println(e.getErrorCode());
+			System.out.println("Annulation car opération non sérializable");
+			rollback();
+		}
+	}
 
 	private static void debit() throws SQLException {
-            PreparedStatement stmt = conn.prepareStatement("UPDATE Comptes Set Solde = SOLDE - ? Where NC = ?");
-            stmt.setInt(2, LectureClavier.lireEntier("Nc du compte à débiter :"));
-            stmt.setInt(1, LectureClavier.lireEntier("Somme à débiter :"));
-            stmt.executeUpdate();
-	}		
+		try {
+			PreparedStatement stmt = conn.prepareStatement("UPDATE Comptes Set Solde = SOLDE - ? Where NC = ?");
+			stmt.setInt(2, LectureClavier.lireEntier("Nc du compte à débiter :"));
+			stmt.setInt(1, LectureClavier.lireEntier("Somme à débiter :"));
+			stmt.executeUpdate();
+		} catch (SQLException e) {
+			System.out.println(e.getErrorCode());
+			System.out.println("Annulation car opération non sérializable");
+			rollback();
+		}
+	}
 
 	private static void credit() throws SQLException {
-            PreparedStatement stmt = conn.prepareStatement("UPDATE Comptes Set Solde = SOLDE + ? Where NC = ?");
-            stmt.setInt(2, LectureClavier.lireEntier("Nc du compte à débiter :"));
-            stmt.setInt(1, LectureClavier.lireEntier("Somme à créditer :"));
-            stmt.executeUpdate();
+		try {
+			PreparedStatement stmt = conn.prepareStatement("UPDATE Comptes Set Solde = SOLDE + ? Where NC = ?");
+			stmt.setInt(2, LectureClavier.lireEntier("Nc du compte à débiter :"));
+			stmt.setInt(1, LectureClavier.lireEntier("Somme à créditer :"));
+			stmt.executeUpdate();
+		} catch (SQLException e) {
+			System.out.println(e.getErrorCode());
+			System.out.println("Annulation car opération non sérializable");
+			rollback();
+		}
 	}			
 
 	private static void commit() throws SQLException {
-		// A COMPLETER
+		conn.commit();
 	}				
 
 	private static void rollback() throws SQLException {
-		// A COMPLETER
+		conn.rollback();
 	}		
 	
 	private static void getIsolation() throws SQLException {
-		// A COMPLETER
+		System.out.println("Isolation du SGBD : " + conn.getTransactionIsolation());
 	}
 
 	private static void setIsolation() throws SQLException {
@@ -89,22 +108,28 @@ public class Banque {
   	    // Desactivation de l'autocommit
   	    conn.setAutoCommit (false);
   	    System.out.println("Autocommit disabled");
+  	    
+  	    conn.setTransactionIsolation(conn.TRANSACTION_SERIALIZABLE);
+  	    
+	    getIsolation();
+  	    System.out.println("readCommit : " + conn.TRANSACTION_READ_COMMITTED);
+  	    System.out.println("serializable : " + conn.TRANSACTION_SERIALIZABLE);
 
   	    while(!exit) {
-  	    	menu();
-  	    	action = LectureClavier.lireEntier("votre choix ?");
-  	    	switch(action) {
-  	    		case 0 : exit = true; break;
-  	    		case 1 : selection(); break;
-  	    		case 2 : insertion(); break;
-  	    		case 3 : debit(); break;
-  	    		case 4 : credit(); break;
-  	    		case 5 : commit(); break;
-  	    		case 6 : rollback(); break;
-  	    		case 7 : getIsolation(); break;
-  	    		case 8 : setIsolation(); break;
-  	    		default : System.out.println("=> choix incorrect"); menu();
-  	    	}
+		menu();
+		action = LectureClavier.lireEntier("votre choix ?");
+		switch(action) {
+			case 0 : exit = true; break;
+			case 1 : selection(); break;
+			case 2 : insertion(); break;
+			case 3 : debit(); break;
+			case 4 : credit(); break;
+			case 5 : commit(); break;
+			case 6 : rollback(); break;
+			case 7 : getIsolation(); break;
+			case 8 : setIsolation(); break;
+			default : System.out.println("=> choix incorrect"); menu();
+		}
   	    } 	    
 
   	    // Liberation des ressources et fermeture de la connexion...
