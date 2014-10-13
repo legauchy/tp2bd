@@ -19,6 +19,8 @@ public class Banque {
 		System.out.println("4 : Credit");
 		System.out.println("5 : Commit");
 		System.out.println("6 : Rollback");
+                System.out.println("7 : Affichage du niveau d'isolation");
+                System.out.println("8 : Choix du niveau d'isolation");
 	}
 
 	private static void selection() throws SQLException {
@@ -41,7 +43,11 @@ public class Banque {
 			stmt.executeUpdate();
 		} catch (SQLException e) {
 			System.out.println(e.getErrorCode());
-			System.out.println("Annulation car opération non sérializable");
+			if(e.getErrorCode() == 60)  {
+                            System.out.println("Annulation car opération en interbloquage");
+                        } else {
+                             System.out.println("Annulation car opération non sérializable");
+                        }
 			rollback();
 		}
 	}
@@ -54,7 +60,11 @@ public class Banque {
 			stmt.executeUpdate();
 		} catch (SQLException e) {
 			System.out.println(e.getErrorCode());
-			System.out.println("Annulation car opération non sérializable");
+                        if(e.getErrorCode() == 60)  {
+                            System.out.println("Annulation car opération en interbloquage");
+                        } else {
+                             System.out.println("Annulation car opération non sérializable");
+                        }
 			rollback();
 		}
 	}
@@ -67,7 +77,11 @@ public class Banque {
 			stmt.executeUpdate();
 		} catch (SQLException e) {
 			System.out.println(e.getErrorCode());
-			System.out.println("Annulation car opération non sérializable");
+			if(e.getErrorCode() == 60)  {
+                            System.out.println("Annulation car opération en interbloquage");
+                        } else {
+                             System.out.println("Annulation car opération non sérializable");
+                        }
 			rollback();
 		}
 	}			
@@ -81,12 +95,31 @@ public class Banque {
 	}		
 	
 	private static void getIsolation() throws SQLException {
-		System.out.println("Isolation du SGBD : " + conn.getTransactionIsolation());
+                switch(conn.getTransactionIsolation()) {
+			case Connection.TRANSACTION_READ_COMMITTED : System.out.println("TRANSACTION_READ_COMMITTED"); break;
+			case Connection.TRANSACTION_NONE : System.out.println("TRANSACTION_NONE"); break;
+			case Connection.TRANSACTION_SERIALIZABLE : System.out.println("TRANSACTION_SERIALIZABLE"); break;
+			case Connection.TRANSACTION_READ_UNCOMMITTED : System.out.println("TRANSACTION_READ_UNCOMMITTED"); break;
+			case Connection.TRANSACTION_REPEATABLE_READ : System.out.println("TRANSACTION_REPEATABLE_READ"); break;
+			default : System.out.println("=> choix incorrect");
+		}
 	}
 
 	private static void setIsolation() throws SQLException {
-		// A COMPLETER
-	}	
+		menu_transaction();
+                int action = LectureClavier.lireEntier("votre choix ?");
+		switch(action) {
+			case 0 : conn.setTransactionIsolation(conn.TRANSACTION_READ_COMMITTED); break;
+			case 1 : conn.setTransactionIsolation(conn.TRANSACTION_SERIALIZABLE); break;
+			default : System.out.println("=> choix incorrect");
+		}
+	}
+        
+        private static void menu_transaction() {
+            System.out.println("*** Choisir une action a effectuer : ***");
+            System.out.println("0 : TRANSACTION_READ_COMMITTED");
+            System.out.println("1 : TRANSACTION_SERIALIZABLE");
+        }
 	
     public static void main(String args[]) {
 
